@@ -22,7 +22,7 @@ default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었�
 -그리고 html에 기재된 <script> , <css> 등의 리소스도 각 요청으로 요청한다.
 
 ### 요구사항 2 - get 방식으로 회원가입
-* 
+* HttpRequestUtils의 존재를 알게 됐다. 적절한 파싱 방법을 골라 쓰면 될 듯 
 
 ### 요구사항 3 - post 방식으로 회원가입
 * 
