@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,25 +34,16 @@ public class RequestHandler extends Thread {
             String requestDocument = readRequest(new BufferedReader(new InputStreamReader(in)));
 
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            DataOutputStream dos = new DataOutputStream(out);
             byte[] body;
 
             log.debug("requestDocument: {}", requestDocument);
             if(requestDocument != null) {
                 File f = new File(PROJECT_ROOT+requestDocument);
-
-                String line = "";
-                String temp;
-                try(BufferedReader br = new BufferedReader(new FileReader(f))){
-                    while((temp = br.readLine()) != null)
-                        line += temp;
-                } catch (Exception e) {
-                    log.error(e.getMessage());
-                }
-                body = line.getBytes();
+                body = Files.readAllBytes(f.toPath());
             } else {
                 body = "Hello World!!".getBytes();
             }
+            DataOutputStream dos = new DataOutputStream(out);
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {

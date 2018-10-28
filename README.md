@@ -16,6 +16,10 @@
 
 ### 요구사항 1 - http://localhost:8080/index.html로 접속시 응답
 * 
+- 힘들게 File을 열고 스트림을 따내고, 내용을 읽어내도 되지만, Files 이라는 유틸성 클래스를 이용하면 간편하게 byte[] 를 얻어낼 수 있다.
+- 크롬에서 localhost:<port> 혹은 localhost:<port>/index.html 을 치니까 총 3번의 요청을 보낸다.
+default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었다.
+-그리고 html에 기재된 <script> , <css> 등의 리소스도 각 요청으로 요청한다.
 
 ### 요구사항 2 - get 방식으로 회원가입
 * 
