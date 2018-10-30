@@ -19,7 +19,7 @@ public class SignUpHandler {
 
     public byte[] signUp(String query) {
         log.debug("sign up request : {}", query);
-        Map<String, String> param = HttpRequestUtils.parseQueryString(query.split("\\?")[1]);
+        Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User signUpUser = new User(param.get("userId"),
                                    param.get("password"),
                                    param.get("name"),

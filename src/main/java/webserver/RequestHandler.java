@@ -11,6 +11,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 
 import service.SignUpServiceImpl;
+import util.HttpRequestUtils;
+import util.HttpRequestUtils.Pair;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -36,18 +42,22 @@ public class RequestHandler extends Thread {
                   connection.getPort());
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-            String query = readRequest(new BufferedReader(new InputStreamReader(in)));
-            log.debug("query: {}", query);
+            HttpRequest httpRequest = readRequest(new BufferedReader(new InputStreamReader(in)));
+            log.debug("http request: {}", httpRequest);
 
             byte[] body;
-            if (query.contains("/user/create")) {
-                body = signUpHandler.signUp(query);
-            } else if (query.contains("/css") || query.contains("/fonts") || query.contains("/images")
-                       || query.contains("/js") || query.contains("/qna") || query.contains("/user")
-                       || query.contains(".html") || query.contains(".css") || query.contains(".png") ||
-                       query.contains(".ico") || query.contains(".js")) {
-                body = resourceHandler.getResourceBytes(query);
+            String resource = httpRequest.getResource();
+
+           if (resource.startsWith("/user/create")) {
+                body = signUpHandler.signUp(httpRequest.getBody());
+            } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
+                       httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
+                       || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
+                       || resource.contains(".html") || resource.contains(".css") || resource.contains(".png") ||
+                       resource.contains(".ico") || resource.contains(".js")) {
+                body = resourceHandler.getResourceBytes(resource);
             } else {
+                //사실상 exception 던져야하지 않을까 404
                 body = "Hello World!!".getBytes();
             }
 
@@ -56,34 +66,58 @@ public class RequestHandler extends Thread {
             responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
+        } catch (Exception e) {
+
         }
     }
 
     // RequestReader와 같은 전담 클래스를 만드는게 어떨까?
     // 적절한 요청을 적절한 핸들러에게 뿌려주는 역할을 하면 어떨까..
-    private String readRequest(BufferedReader br) {
-        String line = null;
-        String query = null;
+    private HttpRequest readRequest(BufferedReader br) throws HttpRequestParsingException {
         log.debug("\n\n-----------[read Request]");
+
+        HttpMethod method = null;
+        String resource = null;
+        String scheme = "HTTP/1.1";
+        Map<String, String> headers = new HashMap<>();
+        String body = null;
+
+        String line = null;
         boolean firstLine = true;
+
         try {
             while ((line = br.readLine()) != null) {
                 log.debug(line);
                 if(firstLine) {
-                    if(line.contains("GET")) {
-                        query = line.split(" ")[1];
-                        if(query.equals("/")) query = "/index.html";
-                    }
+                    String[] temp = line.split(" ");
+                    method = HttpMethod.valueOf(temp[0]);
+                    resource = temp[1];
+                    scheme = temp[2];
+
+                    if(method.equals(HttpMethod.GET) && resource.equals("/"))
+                        resource = "/index.html";
+
                     firstLine = false;
                 } else {
-                    if(Strings.isNullOrEmpty(line)) break;
+                    if(Strings.isNullOrEmpty(line)) {
+                        break;
+                    } else {
+                        Pair pair = HttpRequestUtils.parseHeader(line);
+                        headers.put(pair.getKey(), pair.getValue());
+                    }
                 }
             }
+
+            if (method.equals(HttpMethod.POST)) {
+                int contentLength = Integer.parseInt(headers.get("Content-Length"));
+                body = IOUtils.readData(br, contentLength);
+            }
+
+            return new HttpRequest(method, resource, scheme, headers, body);
         } catch (Exception e) {
             log.error("readRequest Error: {}", e.getMessage());
+            throw new HttpRequestParsingException(e.getMessage());
         }
-
-        return query;
     }
 
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
@@ -106,3 +140,11 @@ public class RequestHandler extends Thread {
         }
     }
 }
+
+class HttpRequestParsingException extends Exception {
+    public HttpRequestParsingException(String message) {
+        super(message);
+    }
+}
+
+
