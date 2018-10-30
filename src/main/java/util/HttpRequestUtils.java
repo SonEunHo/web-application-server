@@ -32,7 +32,7 @@ public class HttpRequestUtils {
         }
 
         String[] tokens = values.split(separator);
-        return Arrays.stream(tokens).map(t -> getKeyValue(t, "=")).filter(p -> p != null)
+        return Arrays.stream(tokens).map(t -> getKeyValue(t, "=")).filter(p -> p != null) //Objects::nonNull 로 대체가능
                 .collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
     }
 

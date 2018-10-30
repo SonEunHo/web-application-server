@@ -2,7 +2,7 @@ package service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import db.DataBase;
 import model.User;
 
 /**
@@ -12,6 +12,7 @@ import model.User;
 public class SignUpServiceImpl implements SignUpService {
     private Logger logger = LoggerFactory.getLogger(SignUpServiceImpl.class);
     private static SignUpServiceImpl singleTone;
+    private DataBase database;
     private SignUpServiceImpl() {
         logger.debug("create SignUpServiceImpl");
     }
@@ -26,6 +27,7 @@ public class SignUpServiceImpl implements SignUpService {
     @Override
     public User signUp(User user) {
         logger.debug("sign up. user: {}",user);
+        database.addUser(user);
         return user;
     }
 }

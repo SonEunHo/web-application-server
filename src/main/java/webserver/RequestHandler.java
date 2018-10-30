@@ -60,6 +60,7 @@ public class RequestHandler extends Thread {
     }
 
     // RequestReader와 같은 전담 클래스를 만드는게 어떨까?
+    // 적절한 요청을 적절한 핸들러에게 뿌려주는 역할을 하면 어떨까..
     private String readRequest(BufferedReader br) {
         String line = null;
         String query = null;

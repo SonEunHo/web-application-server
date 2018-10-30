@@ -23,6 +23,7 @@ default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었�
 
 ### 요구사항 2 - get 방식으로 회원가입
 * HttpRequestUtils의 존재를 알게 됐다. 적절한 파싱 방법을 골라 쓰면 될 듯 
+* 이 HttpRequestUtils, IOUtils는 미리 만들어둔 utils구나
 
 ### 요구사항 3 - post 방식으로 회원가입
 * 
