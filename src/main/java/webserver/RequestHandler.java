@@ -2,16 +2,11 @@ package webserver;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,23 +42,25 @@ public class RequestHandler extends Thread {
 
             byte[] body;
             String resource = httpRequest.getResource();
-
+            HttpResponse response = null;
+            //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
            if (resource.startsWith("/user/create")) {
-                body = signUpHandler.signUp(httpRequest.getBody());
+                response = signUpHandler.signUp(httpRequest.getBody());
             } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
                        httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
                        || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
                        || resource.contains(".html") || resource.contains(".css") || resource.contains(".png") ||
                        resource.contains(".ico") || resource.contains(".js")) {
-                body = resourceHandler.getResourceBytes(resource);
+                response = resourceHandler.getResource(resource);
             } else {
                 //사실상 exception 던져야하지 않을까 404
                 body = "Hello World!!".getBytes();
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "text/html;charset=utf-8");
+                response = new HttpResponse(HttpStatusCode.OK, headers, body);
             }
 
-            DataOutputStream dos = new DataOutputStream(out);
-            response200Header(dos, body.length);
-            responseBody(dos, body);
+            sendResponse(new DataOutputStream(out), response);
         } catch (IOException e) {
             log.error(e.getMessage());
         } catch (Exception e) {
@@ -131,9 +128,34 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void responseBody(DataOutputStream dos, byte[] body) {
+    private void response302(DataOutputStream dos, String redirectLocation) {
         try {
-            dos.write(body, 0, body.length);
+            dos.writeBytes("HTTP/1.1 302 Found : Moved Temporarily \r\n");
+            dos.writeBytes("Location: " + redirectLocation + "\r\n");
+            dos.writeBytes("\r\n");
+            dos.flush();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void sendResponse(DataOutputStream dos, HttpResponse response) {
+        try {
+            dos.writeBytes("HTTP/1.1 "+response.getStatusCode().getStatusCode()+" "+response.getStatusCode().getMessage()+"\r\n");
+            response.getHeaders().forEach((k,v) -> {
+                try {
+                    dos.writeBytes(k + ": " + v+"\r\n");
+                } catch (IOException e) {
+                    log.error(e.getMessage());
+                }
+            });
+            if(response.getBody() != null) {
+                dos.writeBytes("Content-Length: "+response.getBody().length+"\r\n");
+                dos.writeBytes("\r\n");
+                dos.write(response.getBody(), 0, response.getBody().length);
+            } else {
+                dos.writeBytes("\r\n");
+            }
             dos.flush();
         } catch (IOException e) {
             log.error(e.getMessage());
