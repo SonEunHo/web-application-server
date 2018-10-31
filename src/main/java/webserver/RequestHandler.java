@@ -48,6 +48,8 @@ public class RequestHandler extends Thread {
                 response = userHandler.signUp(httpRequest.getBody());
             } else if(resource.equals("/user/login")) {
                 response = userHandler.login(httpRequest.getBody());
+            } else if(resource.equals("/user/list")) {
+                response = userHandler.getUserList(httpRequest);
             } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
                        httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
                        || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")

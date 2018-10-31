@@ -1,7 +1,14 @@
 package service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
+
 import db.DataBase;
 import model.User;
 
@@ -40,5 +47,10 @@ public class UserServiceImpl implements UserService {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public List<User> getUserList() {
+        return new ArrayList<>(database.findAll());
     }
 }
