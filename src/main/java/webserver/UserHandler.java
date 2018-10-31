@@ -57,7 +57,7 @@ public class UserHandler {
     public HttpResponse getUserList(HttpRequest httpRequest) {
         boolean hasLoginCookie = false;
         Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie"));
-        if(cookies.get("logined").equals("true")) {
+        if(cookies.get("logined") != null && cookies.get("logined").equals("true")) {
             hasLoginCookie = true;
         }
 
