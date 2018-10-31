@@ -24,9 +24,11 @@ default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었�
 ### 요구사항 2 - get 방식으로 회원가입
 * HttpRequestUtils의 존재를 알게 됐다. 적절한 파싱 방법을 골라 쓰면 될 듯 
 * 이 HttpRequestUtils, IOUtils는 미리 만들어둔 utils구나
+* routin table의 절실함을 알았다.
+
 
 ### 요구사항 3 - post 방식으로 회원가입
-* 
+* 라우팅이고 자시고, 요청의 내용을 알아야하니 제일 먼저 HTTP 패킷을 파싱해내는 것이 최우선이라는 걸 알았다.
 
 ### 요구사항 4 - redirect 방식으로 이동
 * 
