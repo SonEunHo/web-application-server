@@ -1,5 +1,6 @@
 package webserver;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ public class SignUpHandler {
         this.signUpService = signUpService;
     }
 
-    public byte[] signUp(String query) {
+    public HttpResponse signUp(String query) {
         log.debug("sign up request : {}", query);
         Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User signUpUser = new User(param.get("userId"),
@@ -25,7 +26,8 @@ public class SignUpHandler {
                                    param.get("name"),
                                    param.get("email"));
 
-        User result = signUpService.signUp(signUpUser);
-        return new byte[]{};
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Location", "/index.html");
+        return new HttpResponse(HttpStatusCode.REDIRECT, headers, null);
     }
 }
