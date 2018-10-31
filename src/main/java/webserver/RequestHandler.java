@@ -47,9 +47,13 @@ public class RequestHandler extends Thread {
 
             byte[] body;
             String resource = httpRequest.getResource();
+            DataOutputStream dos = new DataOutputStream(out);
 
+            //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
            if (resource.startsWith("/user/create")) {
-                body = signUpHandler.signUp(httpRequest.getBody());
+                signUpHandler.signUp(httpRequest.getBody());
+                response302(dos, "/index.html");
+                return;
             } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
                        httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
                        || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
@@ -61,7 +65,6 @@ public class RequestHandler extends Thread {
                 body = "Hello World!!".getBytes();
             }
 
-            DataOutputStream dos = new DataOutputStream(out);
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
@@ -126,6 +129,17 @@ public class RequestHandler extends Thread {
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302(DataOutputStream dos, String redirectLocation) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found : Moved Temporarily \r\n");
+            dos.writeBytes("Location: " + redirectLocation + "\r\n");
+            dos.writeBytes("\r\n");
+            dos.flush();
         } catch (IOException e) {
             log.error(e.getMessage());
         }
