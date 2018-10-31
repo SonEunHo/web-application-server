@@ -1,7 +1,7 @@
 package webserver;
 
 public enum HttpStatusCode {
-    OK(200, "OK"), REDIRECT(302, "Found : Moved Temporarily");
+    OK(200, "OK"), REDIRECT(302, "Found : Moved Temporarily"), CLIENT_ERROR(400, "error");
 
     private int statusCode;
     private String message;

@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
-import service.SignUpServiceImpl;
+import service.UserServiceImpl;
 import util.HttpRequestUtils;
 import util.HttpRequestUtils.Pair;
 import util.IOUtils;
@@ -23,13 +23,13 @@ import util.IOUtils;
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
     private ResourceHandler resourceHandler;
-    private SignUpHandler signUpHandler;
+    private UserHandler userHandler;
     private Socket connection;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
         resourceHandler = new ResourceHandler();
-        signUpHandler = new SignUpHandler(SignUpServiceImpl.getService());
+        userHandler = new UserHandler(UserServiceImpl.getService());
     }
 
     public void run() {
@@ -44,8 +44,10 @@ public class RequestHandler extends Thread {
             String resource = httpRequest.getResource();
             HttpResponse response = null;
             //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
-           if (resource.startsWith("/user/create")) {
-                response = signUpHandler.signUp(httpRequest.getBody());
+            if (resource.equals("/user/create")) {
+                response = userHandler.signUp(httpRequest.getBody());
+            } else if(resource.equals("/user/login")) {
+                response = userHandler.login(httpRequest.getBody());
             } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
                        httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
                        || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
@@ -114,28 +116,6 @@ public class RequestHandler extends Thread {
         } catch (Exception e) {
             log.error("readRequest Error: {}", e.getMessage());
             throw new HttpRequestParsingException(e.getMessage());
-        }
-    }
-
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private void response302(DataOutputStream dos, String redirectLocation) {
-        try {
-            dos.writeBytes("HTTP/1.1 302 Found : Moved Temporarily \r\n");
-            dos.writeBytes("Location: " + redirectLocation + "\r\n");
-            dos.writeBytes("\r\n");
-            dos.flush();
-        } catch (IOException e) {
-            log.error(e.getMessage());
         }
     }
 
