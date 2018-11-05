@@ -37,7 +37,11 @@ default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었�
 * 
 
 ### 요구사항 6 - stylesheet 적용
-* 
+*
+
+### 요구사항 7 - css 적용
+* css는 content-Type이 "text/css" 이다.
+* js 파일은 content-Type이 "application/javascript"이다. 
 
 ### heroku 서버에 배포 후
 * 

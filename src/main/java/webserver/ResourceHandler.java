@@ -19,7 +19,10 @@ public class ResourceHandler {
         File file = new File(WEB_RESOURCE_ROOT + resourcePath);
 
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "text/html;charset=utf-8");
+        if(resourcePath.contains(".css"))
+            headers.put("Content-Type", "text/css");
+        else
+            headers.put("Content-Type", "text/html;charset=utf-8");
 
         return new HttpResponse(HttpStatusCode.OK, headers, Files.readAllBytes(file.toPath()));
     }
