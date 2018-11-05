@@ -9,13 +9,17 @@ import org.slf4j.LoggerFactory;
 public class WebServer {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private static final int DEFAULT_PORT = 8268;
+    private static Phase phase;
 
     public static void main(String args[]) throws Exception {
         int port = 0;
         if (args == null || args.length == 0) {
             port = DEFAULT_PORT;
+            phase = Phase.DEVELOP;
         } else {
             port = Integer.parseInt(args[0]);
+            if (args.length == 2)
+                phase = Phase.valueOf(args[1]);
         }
 
         // 서버소켓을 생성한다. 웹서버는 기본적으로 8080번 포트를 사용한다.
@@ -29,6 +33,19 @@ public class WebServer {
                 RequestHandler requestHandler = new RequestHandler(connection);
                 requestHandler.start();
             }
+        }
+    }
+
+    public static Phase getPhase() {
+        return phase;
+    }
+
+    enum Phase {
+        DEVELOP("develop"), PRODUCTION("production");
+        private String phase;
+
+        Phase(String phase) {
+            this.phase = phase;
         }
     }
 }
