@@ -43,5 +43,10 @@ default html, default css, dafault icon(favicon.ico) 를 요청하는 것이었�
 * css는 content-Type이 "text/css" 이다.
 * js 파일은 content-Type이 "application/javascript"이다. 
 
+### etc
+* local개발시 사용한 path를 그대로 박아두니 당연히 서버에서 에러가 난다.
+* 상대경로로 하던가 혹은 phase별로 경로를 설정해야할 것 같다.
+
+
 ### heroku 서버에 배포 후
 * 
