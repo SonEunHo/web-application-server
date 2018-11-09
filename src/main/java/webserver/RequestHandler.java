@@ -23,14 +23,19 @@ import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private ResourceHandler resourceHandler;
+    private HttpHandler resourceHandler;
     private HttpHandler userHandler;
     private Socket connection;
+    private static Map<String, HttpHandler> handlerMap;
+
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        resourceHandler = new ResourceHandler();
+        handlerMap = new HashMap<>();
         userHandler = new UserHandler(UserServiceImpl.getService());
+
+        resourceHandler = new ResourceHandler();
+        initHandlerMap();
     }
 
     public void run() {
@@ -42,22 +47,7 @@ public class RequestHandler extends Thread {
             HttpRequest httpRequest = readRequest(new BufferedReader(new InputStreamReader(in)));
             log.debug("http request: {}", httpRequest);
 
-            byte[] body;
-            String resource = httpRequest.getResource();
-
-            //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
-            if (resource.startsWith("/user")) {
-                response = userHandler.service(httpRequest);
-            } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
-                       httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
-                       || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
-                       || resource.contains(".html") || resource.contains(".css") || resource.contains(".png")
-                       || resource.contains(".ico") || resource.contains(".js")) {
-                response = resourceHandler.getResource(resource);
-            } else {
-                response = HttpResponseUtils.make_404_response();
-            }
-
+            response = delegateRequestToProperHandler(httpRequest);
             sendResponse(new DataOutputStream(out), response);
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -113,6 +103,20 @@ public class RequestHandler extends Thread {
         return new HttpRequest(method, resource, scheme, headers, body);
     }
 
+    private HttpResponse delegateRequestToProperHandler(HttpRequest httpRequest) throws IOException{
+        HttpResponse response  = null;
+        String resource = httpRequest.getResource();
+
+
+        if (handlerMap.containsKey(resource)) {
+            response = handlerMap.get(resource).service(httpRequest);
+        } else {
+            response = resourceHandler.service(httpRequest);
+        }
+
+        return response;
+    }
+
     private void sendResponse(DataOutputStream dos, HttpResponse response) {
         try {
             dos.writeBytes("HTTP/1.1 "+response.getStatusCode().getStatusCode()+" "+response.getStatusCode().getMessage()+"\r\n");
@@ -134,6 +138,12 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    public void initHandlerMap() {
+        handlerMap.put("/user/create", userHandler);
+        handlerMap.put("/user/login", userHandler);
+        handlerMap.put("/user/list", userHandler);
     }
 }
 

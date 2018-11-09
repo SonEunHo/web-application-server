@@ -12,4 +12,10 @@ public class HttpResponseUtils {
         headers.put("Content-Type", "text/html;charset=utf-8");
         return new HttpResponse(HttpStatusCode.NOT_FOUND, headers, null);
     }
+
+    public static HttpResponse make_500_response() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/html;charset=utf-8");
+        return new HttpResponse(HttpStatusCode.INTERNAL_ERROR, headers, null);
+    }
 }
