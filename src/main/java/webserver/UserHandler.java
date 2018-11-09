@@ -13,8 +13,9 @@ import org.slf4j.LoggerFactory;
 import model.User;
 import service.UserService;
 import util.HttpRequestUtils;
+import util.HttpResponseUtils;
 
-public class UserHandler {
+public class UserHandler implements HttpHandler {
     private static final Logger log = LoggerFactory.getLogger(ResourceHandler.class);
     //이거 나중에 통일되도록 뽑자
     private static final String WEB_RESOURCE_ROOT = "/Users/kakao/workspace/web-application-server/webapp";
@@ -24,7 +25,25 @@ public class UserHandler {
         this.userService = userService;
     }
 
-    public HttpResponse signUp(String query) {
+    @Override
+    public HttpResponse service(HttpRequest httpRequest) {
+        String resource = httpRequest.getResource();
+        HttpResponse response = null;
+
+        if("/user/create".equals(resource)) {
+            response = signUp(httpRequest.getBody());
+        } else if ("/user/login".equals(resource)) {
+            response = login(httpRequest.getBody());
+        } else if ("/user/list".equals(resource)) {
+            response = getUserList(httpRequest);
+        } else {
+            response = HttpResponseUtils.make_404_response();
+        }
+
+        return response;
+    }
+
+    private HttpResponse signUp(String query) {
         log.debug("sign up request : {}", query);
         Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User signUpUser = new User(param.get("userId"),
@@ -38,7 +57,7 @@ public class UserHandler {
         return new HttpResponse(HttpStatusCode.REDIRECT, headers, null);
     }
 
-    public HttpResponse login(String query) {
+    private HttpResponse login(String query) {
         log.debug("login request {}", query); //password는 필터링 해야할텐데
         Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User user = userService.login(param.get("userId"), param.get("password"));
@@ -54,7 +73,7 @@ public class UserHandler {
         }
     }
 
-    public HttpResponse getUserList(HttpRequest httpRequest) {
+    private HttpResponse getUserList(HttpRequest httpRequest) {
         boolean hasLoginCookie = false;
         Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie"));
         if(cookies.get("logined") != null && cookies.get("logined").equals("true")) {

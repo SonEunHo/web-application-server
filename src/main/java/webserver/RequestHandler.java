@@ -18,12 +18,13 @@ import com.google.common.base.Strings;
 import service.UserServiceImpl;
 import util.HttpRequestUtils;
 import util.HttpRequestUtils.Pair;
+import util.HttpResponseUtils;
 import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
     private ResourceHandler resourceHandler;
-    private UserHandler userHandler;
+    private HttpHandler userHandler;
     private Socket connection;
 
     public RequestHandler(Socket connectionSocket) {
@@ -35,6 +36,7 @@ public class RequestHandler extends Thread {
     public void run() {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                   connection.getPort());
+        HttpResponse response = null;
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest httpRequest = readRequest(new BufferedReader(new InputStreamReader(in)));
@@ -42,24 +44,18 @@ public class RequestHandler extends Thread {
 
             byte[] body;
             String resource = httpRequest.getResource();
-            HttpResponse response = null;
+
             //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
-            if (resource.equals("/user/create")) {
-                response = userHandler.signUp(httpRequest.getBody());
-            } else if(resource.equals("/user/login")) {
-                response = userHandler.login(httpRequest.getBody());
-            } else if(resource.equals("/user/list")) {
-                response = userHandler.getUserList(httpRequest);
+            if (resource.startsWith("/user")) {
+                response = userHandler.service(httpRequest);
             } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
                        httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
                        || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
-                       || resource.contains(".html") || resource.contains(".css") || resource.contains(".png") ||
-                       resource.contains(".ico") || resource.contains(".js")) {
+                       || resource.contains(".html") || resource.contains(".css") || resource.contains(".png")
+                       || resource.contains(".ico") || resource.contains(".js")) {
                 response = resourceHandler.getResource(resource);
             } else {
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type", "text/html;charset=utf-8");
-                response = new HttpResponse(HttpStatusCode.NOT_FOUND, headers, null);
+                response = HttpResponseUtils.make_404_response();
             }
 
             sendResponse(new DataOutputStream(out), response);
