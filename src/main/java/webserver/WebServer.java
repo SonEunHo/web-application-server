@@ -13,9 +13,9 @@ public class WebServer {
 
     public static void main(String args[]) throws Exception {
         int port = 0;
+        phase = Phase.DEVELOP;
         if (args == null || args.length == 0) {
             port = DEFAULT_PORT;
-            phase = Phase.DEVELOP;
         } else {
             port = Integer.parseInt(args[0]);
             if (args.length == 2)
