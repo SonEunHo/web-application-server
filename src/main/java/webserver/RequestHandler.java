@@ -57,18 +57,16 @@ public class RequestHandler extends Thread {
                        resource.contains(".ico") || resource.contains(".js")) {
                 response = resourceHandler.getResource(resource);
             } else {
-                //사실상 exception 던져야하지 않을까 404
-                body = "Hello World!!".getBytes();
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Type", "text/html;charset=utf-8");
-                response = new HttpResponse(HttpStatusCode.OK, headers, body);
+                response = new HttpResponse(HttpStatusCode.NOT_FOUND, headers, null);
             }
 
             sendResponse(new DataOutputStream(out), response);
         } catch (IOException e) {
             log.error(e.getMessage());
         } catch (Exception e) {
-
+            log.error(e.getMessage());
         }
     }
 
@@ -84,41 +82,39 @@ public class RequestHandler extends Thread {
         String body = null;
 
         String line = null;
-        boolean firstLine = true;
 
         try {
+            line = br.readLine();
+            log.debug(line);
+            String[] temp = line.split(" ");
+            method = HttpMethod.valueOf(temp[0]);
+            resource = temp[1];
+            scheme = temp[2];
+
+            if(method.equals(HttpMethod.GET) && resource.equals("/"))
+                resource = "/index.html";
+
+            //read only HeaderSection
             while ((line = br.readLine()) != null) {
                 log.debug(line);
-                if(firstLine) {
-                    String[] temp = line.split(" ");
-                    method = HttpMethod.valueOf(temp[0]);
-                    resource = temp[1];
-                    scheme = temp[2];
-
-                    if(method.equals(HttpMethod.GET) && resource.equals("/"))
-                        resource = "/index.html";
-
-                    firstLine = false;
-                } else {
-                    if(Strings.isNullOrEmpty(line)) {
-                        break;
-                    } else {
-                        Pair pair = HttpRequestUtils.parseHeader(line);
-                        headers.put(pair.getKey(), pair.getValue());
-                    }
+                if (Strings.isNullOrEmpty(line)) break; //end of header section
+                else {
+                    Pair pair = HttpRequestUtils.parseHeader(line);
+                    headers.put(pair.getKey(), pair.getValue());
                 }
             }
 
+            //read body if method is post
             if (method.equals(HttpMethod.POST)) {
                 int contentLength = Integer.parseInt(headers.get("Content-Length"));
                 body = IOUtils.readData(br, contentLength);
             }
-
-            return new HttpRequest(method, resource, scheme, headers, body);
         } catch (Exception e) {
             log.error("readRequest Error: {}", e.getMessage());
             throw new HttpRequestParsingException(e.getMessage());
         }
+
+        return new HttpRequest(method, resource, scheme, headers, body);
     }
 
     private void sendResponse(DataOutputStream dos, HttpResponse response) {
