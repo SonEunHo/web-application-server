@@ -1,4 +1,4 @@
-package webserver;
+package handler;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -18,8 +18,10 @@ import com.google.common.base.Strings;
 import service.UserServiceImpl;
 import util.HttpRequestUtils;
 import util.HttpRequestUtils.Pair;
-import util.HttpResponseUtils;
 import util.IOUtils;
+import webserver.HttpMethod;
+import webserver.HttpRequest;
+import webserver.HttpResponse;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);

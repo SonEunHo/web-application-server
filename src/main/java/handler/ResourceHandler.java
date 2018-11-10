@@ -1,8 +1,7 @@
-package webserver;
+package handler;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,25 +10,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HttpResponseUtils;
+import webserver.HttpMethod;
+import webserver.HttpRequest;
+import webserver.HttpResponse;
+import webserver.HttpStatusCode;
+import webserver.WebServer;
 import webserver.WebServer.Phase;
 
-public class ResourceHandler implements HttpHandler{
+public class ResourceHandler extends AbstracrtHandler {
     private static final Logger log = LoggerFactory.getLogger(ResourceHandler.class);
     private static final String DEVELOP_WEB_RESOURCE_ROOT = "/Users/kakao/workspace/web-application-server/webapp";
     private static final String PRODUCTION_WEB_RESOURCE_ROOT = "/home/deploy/www/web-application-server/webapp";
 
     @Override
-    public HttpResponse service(HttpRequest httpRequest) {
+    public HttpResponse doPost(HttpRequest httpRequest) {
+        throw new InvalidUrlException();
+    }
+
+    @Override
+    public HttpResponse doGet(HttpRequest httpRequest) {
         String resource = httpRequest.getResource();
         HttpResponse response;
-        if (httpRequest.getMethod().equals(HttpMethod.GET) &&
-            httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
+        if (httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains(
+                "/images")
             || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
             || resource.contains(".html") || resource.contains(".css") || resource.contains(".png")
             || resource.contains(".ico") || resource.contains(".js")) {
             response = getResource(resource);
         } else {
-            response = HttpResponseUtils.make_404_response();
+            throw new InvalidUrlException();
         }
 
         return response;

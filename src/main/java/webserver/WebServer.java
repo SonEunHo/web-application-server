@@ -2,11 +2,11 @@ package webserver;
 
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import handler.RequestHandler;
 
 public class WebServer {
     private static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -44,7 +44,7 @@ public class WebServer {
         return phase;
     }
 
-    enum Phase {
+    public enum Phase {
         DEVELOP("develop"), PRODUCTION("production");
         private final String phase;
 
