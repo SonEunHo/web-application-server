@@ -1,4 +1,4 @@
-package webserver;
+package handler;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -19,56 +19,42 @@ import service.UserServiceImpl;
 import util.HttpRequestUtils;
 import util.HttpRequestUtils.Pair;
 import util.IOUtils;
+import webserver.HttpMethod;
+import webserver.HttpRequest;
+import webserver.HttpResponse;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private ResourceHandler resourceHandler;
-    private UserHandler userHandler;
+    private HttpHandler resourceHandler;
+    private HttpHandler userHandler;
     private Socket connection;
+    private static Map<String, HttpHandler> handlerMap;
+
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        resourceHandler = new ResourceHandler();
+        handlerMap = new HashMap<>();
         userHandler = new UserHandler(UserServiceImpl.getService());
+
+        resourceHandler = new ResourceHandler();
+        initHandlerMap();
     }
 
     public void run() {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                   connection.getPort());
+        HttpResponse response = null;
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest httpRequest = readRequest(new BufferedReader(new InputStreamReader(in)));
             log.debug("http request: {}", httpRequest);
 
-            byte[] body;
-            String resource = httpRequest.getResource();
-            HttpResponse response = null;
-            //핸들러에게 모든 것을 위임하는 것이 나을 것 같은데. (그 곳에서 스트림도 관리하게..)
-            if (resource.equals("/user/create")) {
-                response = userHandler.signUp(httpRequest.getBody());
-            } else if(resource.equals("/user/login")) {
-                response = userHandler.login(httpRequest.getBody());
-            } else if(resource.equals("/user/list")) {
-                response = userHandler.getUserList(httpRequest);
-            } else if (httpRequest.getMethod().equals(HttpMethod.GET) &&
-                       httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains("/images")
-                       || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
-                       || resource.contains(".html") || resource.contains(".css") || resource.contains(".png") ||
-                       resource.contains(".ico") || resource.contains(".js")) {
-                response = resourceHandler.getResource(resource);
-            } else {
-                //사실상 exception 던져야하지 않을까 404
-                body = "Hello World!!".getBytes();
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type", "text/html;charset=utf-8");
-                response = new HttpResponse(HttpStatusCode.OK, headers, body);
-            }
-
+            response = delegateRequestToProperHandler(httpRequest);
             sendResponse(new DataOutputStream(out), response);
         } catch (IOException e) {
             log.error(e.getMessage());
         } catch (Exception e) {
-
+            log.error(e.getMessage());
         }
     }
 
@@ -84,41 +70,53 @@ public class RequestHandler extends Thread {
         String body = null;
 
         String line = null;
-        boolean firstLine = true;
 
         try {
+            line = br.readLine();
+            log.debug(line);
+            String[] temp = line.split(" ");
+            method = HttpMethod.valueOf(temp[0]);
+            resource = temp[1];
+            scheme = temp[2];
+
+            if(method.equals(HttpMethod.GET) && resource.equals("/"))
+                resource = "/index.html";
+
+            //read only HeaderSection
             while ((line = br.readLine()) != null) {
                 log.debug(line);
-                if(firstLine) {
-                    String[] temp = line.split(" ");
-                    method = HttpMethod.valueOf(temp[0]);
-                    resource = temp[1];
-                    scheme = temp[2];
-
-                    if(method.equals(HttpMethod.GET) && resource.equals("/"))
-                        resource = "/index.html";
-
-                    firstLine = false;
-                } else {
-                    if(Strings.isNullOrEmpty(line)) {
-                        break;
-                    } else {
-                        Pair pair = HttpRequestUtils.parseHeader(line);
-                        headers.put(pair.getKey(), pair.getValue());
-                    }
+                if (Strings.isNullOrEmpty(line)) break; //end of header section
+                else {
+                    Pair pair = HttpRequestUtils.parseHeader(line);
+                    headers.put(pair.getKey(), pair.getValue());
                 }
             }
 
+            //read body if method is post
             if (method.equals(HttpMethod.POST)) {
                 int contentLength = Integer.parseInt(headers.get("Content-Length"));
                 body = IOUtils.readData(br, contentLength);
             }
-
-            return new HttpRequest(method, resource, scheme, headers, body);
         } catch (Exception e) {
             log.error("readRequest Error: {}", e.getMessage());
             throw new HttpRequestParsingException(e.getMessage());
         }
+
+        return new HttpRequest(method, resource, scheme, headers, body);
+    }
+
+    private HttpResponse delegateRequestToProperHandler(HttpRequest httpRequest) throws IOException{
+        HttpResponse response  = null;
+        String resource = httpRequest.getResource();
+
+
+        if (handlerMap.containsKey(resource)) {
+            response = handlerMap.get(resource).service(httpRequest);
+        } else {
+            response = resourceHandler.service(httpRequest);
+        }
+
+        return response;
     }
 
     private void sendResponse(DataOutputStream dos, HttpResponse response) {
@@ -142,6 +140,12 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    public void initHandlerMap() {
+        handlerMap.put("/user/create", userHandler);
+        handlerMap.put("/user/login", userHandler);
+        handlerMap.put("/user/list", userHandler);
     }
 }
 

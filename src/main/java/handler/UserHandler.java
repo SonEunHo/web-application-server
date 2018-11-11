@@ -1,4 +1,4 @@
-package webserver;
+package handler;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,8 +13,11 @@ import org.slf4j.LoggerFactory;
 import model.User;
 import service.UserService;
 import util.HttpRequestUtils;
+import webserver.HttpRequest;
+import webserver.HttpResponse;
+import webserver.HttpStatusCode;
 
-public class UserHandler {
+public class UserHandler extends AbstracrtHandler {
     private static final Logger log = LoggerFactory.getLogger(ResourceHandler.class);
     //이거 나중에 통일되도록 뽑자
     private static final String WEB_RESOURCE_ROOT = "/Users/kakao/workspace/web-application-server/webapp";
@@ -24,7 +27,37 @@ public class UserHandler {
         this.userService = userService;
     }
 
-    public HttpResponse signUp(String query) {
+    @Override
+    public HttpResponse doPost(HttpRequest httpRequest) {
+        HttpResponse response = null;
+        String resource = httpRequest.getResource();
+
+        if("/user/create".equals(resource)) {
+            response = signUp(httpRequest.getBody());
+        } else if ("/user/login".equals(resource)) {
+            response = login(httpRequest.getBody());
+        } else {
+            throw new InvalidUrlException();
+        }
+
+        return response;
+    }
+
+    @Override
+    public HttpResponse doGet(HttpRequest httpRequest) {
+        HttpResponse response;
+        String resource = httpRequest.getResource();
+
+        if ("/user/list".equals(resource)) {
+            response = getUserList(httpRequest);
+        } else {
+            throw new InvalidUrlException();
+        }
+
+        return response;
+    }
+
+    private HttpResponse signUp(String query) {
         log.debug("sign up request : {}", query);
         Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User signUpUser = new User(param.get("userId"),
@@ -38,7 +71,7 @@ public class UserHandler {
         return new HttpResponse(HttpStatusCode.REDIRECT, headers, null);
     }
 
-    public HttpResponse login(String query) {
+    private HttpResponse login(String query) {
         log.debug("login request {}", query); //password는 필터링 해야할텐데
         Map<String, String> param = HttpRequestUtils.parseQueryString(query);
         User user = userService.login(param.get("userId"), param.get("password"));
@@ -47,14 +80,14 @@ public class UserHandler {
         if(user != null) {
             headers.put("Location", "/index.html");
             headers.put("Set-Cookie", "logined=true");
-            return new HttpResponse(HttpStatusCode.REDIRECT, headers,null);
         } else {
             headers.put("Location", "/user/login_failed.html");
-            return new HttpResponse(HttpStatusCode.REDIRECT, headers,null);
         }
+
+        return new HttpResponse(HttpStatusCode.REDIRECT, headers,null);
     }
 
-    public HttpResponse getUserList(HttpRequest httpRequest) {
+    private HttpResponse getUserList(HttpRequest httpRequest) {
         boolean hasLoginCookie = false;
         Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie"));
         if(cookies.get("logined") != null && cookies.get("logined").equals("true")) {
