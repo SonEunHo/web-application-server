@@ -9,8 +9,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import util.HttpResponseUtils;
-import webserver.HttpMethod;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
 import webserver.HttpStatusCode;
@@ -23,29 +21,29 @@ public class ResourceHandler extends AbstracrtHandler {
     private static final String PRODUCTION_WEB_RESOURCE_ROOT = "/home/deploy/www/web-application-server/webapp";
 
     @Override
-    public HttpResponse doPost(HttpRequest httpRequest) {
+    public void doPost(HttpRequest httpRequest, HttpResponse httpResponse) {
         throw new InvalidUrlException();
     }
 
     @Override
-    public HttpResponse doGet(HttpRequest httpRequest) {
+    public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         String resource = httpRequest.getResource();
-        HttpResponse response;
+
         if (httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains(
                 "/images")
             || resource.contains("/js") || resource.contains("/qna") || resource.contains("/user")
             || resource.contains(".html") || resource.contains(".css") || resource.contains(".png")
             || resource.contains(".ico") || resource.contains(".js")) {
-            response = getResource(resource);
+            getResource(resource, httpResponse);
         } else {
             throw new InvalidUrlException();
         }
 
-        return response;
+        httpResponse.sendResponse();
     }
 
     //나중에 익셉션 만들어서 던지는게 낫겠다.
-    public HttpResponse getResource(String resourcePath) {
+    public void getResource(String resourcePath, HttpResponse httpResponse) {
         File file = new File(getWebResourceRoot() + resourcePath);
 
         Map<String, String> headers = new HashMap<>();
@@ -55,9 +53,11 @@ public class ResourceHandler extends AbstracrtHandler {
             headers.put("Content-Type", "text/html;charset=utf-8");
 
         try {
-            return new HttpResponse(HttpStatusCode.OK, headers, Files.readAllBytes(file.toPath()));
+            httpResponse.setStatusCode(HttpStatusCode.OK);
+            httpResponse.setHeaders(headers);
+            httpResponse.setBody(Files.readAllBytes(file.toPath()));
         } catch (IOException e) {
-            return HttpResponseUtils.make_500_response();
+            httpResponse.setStatusCode(HttpStatusCode.INTERNAL_ERROR);
         }
     }
 

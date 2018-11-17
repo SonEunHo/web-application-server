@@ -28,38 +28,36 @@ public class UserHandler extends AbstracrtHandler {
     }
 
     @Override
-    public HttpResponse doPost(HttpRequest httpRequest) {
-        HttpResponse response = null;
+    public void doPost(HttpRequest httpRequest, HttpResponse httpResponse) {
         String resource = httpRequest.getResource();
-
         if("/user/create".equals(resource)) {
-            response = signUp(httpRequest.getBody());
+            signUp(httpRequest, httpResponse);
         } else if ("/user/login".equals(resource)) {
-            response = login(httpRequest.getBody());
+            login(httpRequest, httpResponse);
         } else {
             throw new InvalidUrlException();
         }
 
-        return response;
+        httpResponse.sendResponse();
     }
 
     @Override
-    public HttpResponse doGet(HttpRequest httpRequest) {
-        HttpResponse response;
+    public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         String resource = httpRequest.getResource();
 
         if ("/user/list".equals(resource)) {
-            response = getUserList(httpRequest);
+            getUserList(httpRequest, httpResponse);
         } else {
             throw new InvalidUrlException();
         }
 
-        return response;
+        httpResponse.sendResponse();
     }
 
-    private HttpResponse signUp(String query) {
-        log.debug("sign up request : {}", query);
-        Map<String, String> param = HttpRequestUtils.parseQueryString(query);
+    private void signUp(HttpRequest httpRequest, HttpResponse httpResponse) {
+        Map<String, String> param = HttpRequestUtils.parseQueryString(httpRequest.getBody());
+        log.debug("sign up request : {}", param);
+
         User signUpUser = new User(param.get("userId"),
                                    param.get("password"),
                                    param.get("name"),
@@ -68,12 +66,14 @@ public class UserHandler extends AbstracrtHandler {
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Location", "/index.html");
-        return new HttpResponse(HttpStatusCode.REDIRECT, headers, null);
+        httpResponse.setStatusCode(HttpStatusCode.REDIRECT);
+        httpResponse.setHeaders(headers);
     }
 
-    private HttpResponse login(String query) {
-        log.debug("login request {}", query); //password는 필터링 해야할텐데
-        Map<String, String> param = HttpRequestUtils.parseQueryString(query);
+    private void login(HttpRequest httpRequest, HttpResponse httpResponse) {
+        Map<String, String> param = HttpRequestUtils.parseQueryString(httpRequest.getBody());
+        log.debug("login request {}", param); //password는 필터링 해야할텐데
+
         User user = userService.login(param.get("userId"), param.get("password"));
 
         Map<String, String> headers = new HashMap<>();
@@ -84,10 +84,11 @@ public class UserHandler extends AbstracrtHandler {
             headers.put("Location", "/user/login_failed.html");
         }
 
-        return new HttpResponse(HttpStatusCode.REDIRECT, headers,null);
+        httpResponse.setStatusCode(HttpStatusCode.REDIRECT);
+        httpResponse.setHeaders(headers);
     }
 
-    private HttpResponse getUserList(HttpRequest httpRequest) {
+    private void getUserList(HttpRequest httpRequest, HttpResponse httpResponse) {
         boolean hasLoginCookie = false;
         Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie"));
         if(cookies.get("logined") != null && cookies.get("logined").equals("true")) {
@@ -99,10 +100,13 @@ public class UserHandler extends AbstracrtHandler {
             List<User> userList = userService.getUserList();
             log.debug("get user List: {}", userList);
             headers.put("Content-Type", "text/html;charset=utf-8");
-            return new HttpResponse(HttpStatusCode.OK, headers, makeUserListHtml(userList));
+            httpResponse.setHeaders(headers);
+            httpResponse.setStatusCode(HttpStatusCode.OK);
+            httpResponse.setBody(makeUserListHtml(userList));
         } else {
             headers.put("Location", "/user/login.html");
-            return new HttpResponse(HttpStatusCode.REDIRECT, headers, null);
+            httpResponse.setHeaders(headers);
+            httpResponse.setStatusCode(HttpStatusCode.REDIRECT);
         }
     }
 

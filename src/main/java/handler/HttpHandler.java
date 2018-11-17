@@ -4,7 +4,7 @@ import webserver.HttpRequest;
 import webserver.HttpResponse;
 
 public interface HttpHandler {
-    HttpResponse service(HttpRequest httpRequest);
+    void service(HttpRequest httpRequest, HttpResponse httpResponse);
 }
 
 class InvalidUrlException extends RuntimeException {
