@@ -18,6 +18,10 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
     private static HttpHandler resourceHandler;
     private static HttpHandler userHandler;
+    private static HttpHandler signupHandler;
+    private static HttpHandler loginHandler;
+    private static HttpHandler userListHandler;
+
     private Socket connection;
     private static Map<String, HttpHandler> handlerMap;
 
@@ -58,11 +62,14 @@ public class RequestHandler extends Thread {
     public static void initHandlerMap() {
         userHandler = new UserHandler(UserServiceImpl.getService());
         resourceHandler = new ResourceHandler();
+        signupHandler = new SignupHandler(UserServiceImpl.getService());
+        userListHandler = new UserListHandler(UserServiceImpl.getService());
+        loginHandler = new LoginHandler(UserServiceImpl.getService());
 
         handlerMap = new HashMap<>();
-        handlerMap.put("/user/create", userHandler);
-        handlerMap.put("/user/login", userHandler);
-        handlerMap.put("/user/list", userHandler);
+        handlerMap.put("/user/create", signupHandler);
+        handlerMap.put("/user/login", loginHandler);
+        handlerMap.put("/user/list", userListHandler);
     }
 }
 
