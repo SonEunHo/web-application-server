@@ -21,7 +21,6 @@ public class WebServer {
         } else {
             port = Integer.parseInt(args[0]);
             if (args.length == 2)
-
                 phase = Phase.valueOf(args[1].toUpperCase());
         }
 
@@ -29,7 +28,6 @@ public class WebServer {
         try (ServerSocket listenSocket = new ServerSocket(port)) {
             log.info("Web Application Server started {} port.", port);
             log.info("Web Application Server phase: {}", phase);
-
 
             // 클라이언트가 연결될때까지 대기한다.
             Socket connection;

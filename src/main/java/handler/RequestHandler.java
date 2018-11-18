@@ -1,10 +1,7 @@
 package handler;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
@@ -13,31 +10,26 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Strings;
-
 import service.UserServiceImpl;
-import util.HttpRequestUtils;
-import util.HttpRequestUtils.Pair;
-import util.IOUtils;
-import webserver.HttpMethod;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private HttpHandler resourceHandler;
-    private HttpHandler userHandler;
+    private static HttpHandler resourceHandler;
+    private static HttpHandler signupHandler;
+    private static HttpHandler loginHandler;
+    private static HttpHandler userListHandler;
+
     private Socket connection;
     private static Map<String, HttpHandler> handlerMap;
 
+    static {
+        initHandlerMap();
+    }
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        handlerMap = new HashMap<>();
-        userHandler = new UserHandler(UserServiceImpl.getService());
-
-        resourceHandler = new ResourceHandler();
-        initHandlerMap();
     }
 
     public void run() {
@@ -46,11 +38,10 @@ public class RequestHandler extends Thread {
         HttpResponse response = null;
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-            HttpRequest httpRequest = readRequest(new BufferedReader(new InputStreamReader(in)));
+            HttpRequest httpRequest = new HttpRequest(in);
             log.debug("http request: {}", httpRequest);
 
-            response = delegateRequestToProperHandler(httpRequest);
-            sendResponse(new DataOutputStream(out), response);
+            delegateRequestToProperHandler(httpRequest, out);
         } catch (IOException e) {
             log.error(e.getMessage());
         } catch (Exception e) {
@@ -58,100 +49,25 @@ public class RequestHandler extends Thread {
         }
     }
 
-    // RequestReader와 같은 전담 클래스를 만드는게 어떨까?
-    // 적절한 요청을 적절한 핸들러에게 뿌려주는 역할을 하면 어떨까..
-    private HttpRequest readRequest(BufferedReader br) throws HttpRequestParsingException {
-        log.debug("\n\n-----------[read Request]");
-
-        HttpMethod method = null;
-        String resource = null;
-        String scheme = "HTTP/1.1";
-        Map<String, String> headers = new HashMap<>();
-        String body = null;
-
-        String line = null;
-
-        try {
-            line = br.readLine();
-            log.debug(line);
-            String[] temp = line.split(" ");
-            method = HttpMethod.valueOf(temp[0]);
-            resource = temp[1];
-            scheme = temp[2];
-
-            if(method.equals(HttpMethod.GET) && resource.equals("/"))
-                resource = "/index.html";
-
-            //read only HeaderSection
-            while ((line = br.readLine()) != null) {
-                log.debug(line);
-                if (Strings.isNullOrEmpty(line)) break; //end of header section
-                else {
-                    Pair pair = HttpRequestUtils.parseHeader(line);
-                    headers.put(pair.getKey(), pair.getValue());
-                }
-            }
-
-            //read body if method is post
-            if (method.equals(HttpMethod.POST)) {
-                int contentLength = Integer.parseInt(headers.get("Content-Length"));
-                body = IOUtils.readData(br, contentLength);
-            }
-        } catch (Exception e) {
-            log.error("readRequest Error: {}", e.getMessage());
-            throw new HttpRequestParsingException(e.getMessage());
-        }
-
-        return new HttpRequest(method, resource, scheme, headers, body);
-    }
-
-    private HttpResponse delegateRequestToProperHandler(HttpRequest httpRequest) throws IOException{
-        HttpResponse response  = null;
+    private void delegateRequestToProperHandler(HttpRequest httpRequest, OutputStream dos) throws IOException{
         String resource = httpRequest.getResource();
-
-
         if (handlerMap.containsKey(resource)) {
-            response = handlerMap.get(resource).service(httpRequest);
+            handlerMap.get(resource).service(httpRequest, new HttpResponse(dos));
         } else {
-            response = resourceHandler.service(httpRequest);
-        }
-
-        return response;
-    }
-
-    private void sendResponse(DataOutputStream dos, HttpResponse response) {
-        try {
-            dos.writeBytes("HTTP/1.1 "+response.getStatusCode().getStatusCode()+" "+response.getStatusCode().getMessage()+"\r\n");
-            response.getHeaders().forEach((k,v) -> {
-                try {
-                    dos.writeBytes(k + ": " + v+"\r\n");
-                } catch (IOException e) {
-                    log.error(e.getMessage());
-                }
-            });
-            if(response.getBody() != null) {
-                dos.writeBytes("Content-Length: "+response.getBody().length+"\r\n");
-                dos.writeBytes("\r\n");
-                dos.write(response.getBody(), 0, response.getBody().length);
-            } else {
-                dos.writeBytes("\r\n");
-            }
-            dos.flush();
-        } catch (IOException e) {
-            log.error(e.getMessage());
+            resourceHandler.service(httpRequest, new HttpResponse(dos));
         }
     }
 
-    public void initHandlerMap() {
-        handlerMap.put("/user/create", userHandler);
-        handlerMap.put("/user/login", userHandler);
-        handlerMap.put("/user/list", userHandler);
-    }
-}
+    public static void initHandlerMap() {
+        resourceHandler = new ResourceHandler();
+        signupHandler = new SignupHandler(UserServiceImpl.getService());
+        userListHandler = new UserListHandler(UserServiceImpl.getService());
+        loginHandler = new LoginHandler(UserServiceImpl.getService());
 
-class HttpRequestParsingException extends Exception {
-    public HttpRequestParsingException(String message) {
-        super(message);
+        handlerMap = new HashMap<>();
+        handlerMap.put("/user/create", signupHandler);
+        handlerMap.put("/user/login", loginHandler);
+        handlerMap.put("/user/list", userListHandler);
     }
 }
 
