@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
+import db.SessionDB;
 import util.HttpRequestUtils;
 import util.HttpRequestUtils.Pair;
 import util.IOUtils;
@@ -116,6 +117,12 @@ public class HttpRequest {
 
     public String getQuery(String key) {
         return queryMap.get(key);
+    }
+
+    public HttpSession getHttpSession() {
+        if(cookieMap.get("JSESSIONID") == null)
+            return null;
+        return SessionDB.getSession(cookieMap.get("JSESSIONID"));
     }
 
     @Override

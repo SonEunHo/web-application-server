@@ -31,7 +31,7 @@ public class LoginHandler extends AbstracrtHandler {
         Map<String, String> headers = new HashMap<>();
         if(user != null) {
             headers.put("Location", "/index.html");
-            headers.put("Set-Cookie", "logedin=true");
+            httpRequest.getHttpSession().setAttribute("user", user);
         } else {
             log.warn("[Login Fail] user not found. userId = {}", param.get("userId"));
             headers.put("Location", "/user/login_failed.html");

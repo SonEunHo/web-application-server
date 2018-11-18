@@ -14,6 +14,7 @@ import model.User;
 import service.UserService;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.HttpSession;
 import webserver.HttpStatusCode;
 
 public class UserListHandler extends AbstracrtHandler {
@@ -33,13 +34,11 @@ public class UserListHandler extends AbstracrtHandler {
 
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
-        boolean hasLoginCookie = false;
-        if("true".equals(httpRequest.getCookie("logedin"))) {
-            hasLoginCookie = true;
-        }
+        HttpSession session = httpRequest.getHttpSession();
+        User user = (User) session.getAttribute("user");
 
         Map<String, String> headers = new HashMap<>();
-        if (hasLoginCookie) {
+        if (user != null) {
             List<User> userList = userService.getUserList();
             log.debug("get user List: {}", userList);
             headers.put("Content-Type", "text/html;charset=utf-8");
@@ -47,7 +46,7 @@ public class UserListHandler extends AbstracrtHandler {
             httpResponse.setStatusCode(HttpStatusCode.OK);
             httpResponse.setBody(makeUserListHtml(userList));
         } else {
-            log.debug("[UnAthorized] no cookie");
+            log.debug("[UnAthorized] no user in session");
             headers.put("Location", "/user/login.html");
             httpResponse.setHeaders(headers);
             httpResponse.setStatusCode(HttpStatusCode.REDIRECT);

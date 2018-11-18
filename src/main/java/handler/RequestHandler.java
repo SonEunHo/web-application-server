@@ -10,9 +10,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import db.SessionDB;
 import service.UserServiceImpl;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.HttpSession;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -39,7 +41,14 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest httpRequest = new HttpRequest(in);
+            HttpResponse httpResponse = new HttpResponse(out);
             log.debug("http request: {}", httpRequest);
+
+            if(httpRequest.getCookie("JSESSIONID") == null) {
+                HttpSession session = new HttpSession();
+                SessionDB.saveSession(session);
+                httpResponse.addHeader("Set-Cookie", "JSESSIONID="+session.getId());
+            }
 
             delegateRequestToProperHandler(httpRequest, out);
         } catch (IOException e) {

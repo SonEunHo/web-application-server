@@ -6,17 +6,21 @@ import java.util.Map;
 import webserver.HttpSession;
 
 public class SessionDB {
-    private final Map<String, HttpSession> sessionMap;
+    private static final Map<String, HttpSession> sessionMap = new HashMap<>();;
 
-    public SessionDB() {
-        this.sessionMap = new HashMap<>();
-    }
+//    public SessionDB() {
+//        this.sessionMap = new HashMap<>();
+//    }
 
-    public HttpSession getSession(String sessionId) {
+    public static HttpSession getSession(String sessionId) {
         return sessionMap.get(sessionId);
     }
 
-    public void saveSession(HttpSession httpSession) {
+    public static void saveSession(HttpSession httpSession) {
         sessionMap.put(httpSession.getId(), httpSession);
+    }
+
+    public static void removeSession(String id) {
+        sessionMap.remove(id);
     }
 }

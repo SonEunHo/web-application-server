@@ -4,20 +4,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import db.SessionDB;
+
 public class HttpSession {
     private final String id;
-    private final Map<String, String> attributeMap;
+    private final Map<String, Object> attributeMap;
+    private final Map<String, Object> statusMap;
 
     public HttpSession() {
         id = UUID.randomUUID().toString();
         attributeMap = new HashMap<>();
+        statusMap = new HashMap<>();
     }
 
-    public String getAttribute(String key) {
+    public Object getAttribute(String key) {
         return attributeMap.get(key);
     }
 
-    public void setAttribute(String key, String value) {
+    public void setAttribute(String key, Object value) {
         attributeMap.put(key, value);
     }
 
@@ -27,5 +31,9 @@ public class HttpSession {
 
     public String getId() {
         return id;
+    }
+
+    public void invalidate() {
+        SessionDB.removeSession(id);
     }
 }
