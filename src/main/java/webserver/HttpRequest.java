@@ -24,6 +24,7 @@ public class HttpRequest {
     private final String body;
     private final Map<String, String> queryMap;
     private final Map<String, String> cookieMap;
+    private HttpSession httpSession;
 
     public HttpRequest(InputStream in) {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
