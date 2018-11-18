@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import model.User;
 import service.UserService;
-import util.HttpRequestUtils;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
 import webserver.HttpStatusCode;
@@ -35,7 +34,7 @@ public class UserListHandler extends AbstracrtHandler {
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         boolean hasLoginCookie = false;
-        Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie")if(cookies.get("logedin") != null && cookies.get("logedin").equals("true")) {
+        if("true".equals(httpRequest.getCookie("logedin"))) {
             hasLoginCookie = true;
         }
 

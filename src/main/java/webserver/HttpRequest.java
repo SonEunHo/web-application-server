@@ -23,6 +23,7 @@ public class HttpRequest {
     private final Map<String, String> headers;
     private final String body;
     private final Map<String, String> queryMap;
+    private final Map<String, String> cookieMap;
 
     public HttpRequest(InputStream in) {
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -65,6 +66,7 @@ public class HttpRequest {
             }
         } catch (Exception e) {
             log.error("readRequest Error: {}", e.getMessage());
+            throw new RuntimeException("readRequest Error");
         }
 
         this.method = method;
@@ -76,6 +78,7 @@ public class HttpRequest {
             queryMap = HttpRequestUtils.parseQueryString(resource.split("\\?")[1]);
         else
             queryMap = null;
+        cookieMap = HttpRequestUtils.parseCookies(headers.get("Cookie"));
     }
 
     public HttpMethod getMethod() {
@@ -92,6 +95,14 @@ public class HttpRequest {
 
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    public Map<String, String> getCookieMap() {
+        return cookieMap;
+    }
+
+    public String getCookie(String key) {
+        return cookieMap.get(key);
     }
 
     public String getBody() {

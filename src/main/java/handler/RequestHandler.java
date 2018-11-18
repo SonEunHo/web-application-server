@@ -71,10 +71,4 @@ public class RequestHandler extends Thread {
     }
 }
 
-class HttpRequestParsingException extends Exception {
-    public HttpRequestParsingException(String message) {
-        super(message);
-    }
-}
-
 

@@ -28,6 +28,7 @@ public class ResourceHandler extends AbstracrtHandler {
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         String resource = httpRequest.getResource();
+        log.debug("[Resource request] resource = {}", resource);
 
         if (httpRequest.getResource().contains("/css") || resource.contains("/fonts") || resource.contains(
                 "/images")

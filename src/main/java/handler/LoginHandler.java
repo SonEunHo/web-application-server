@@ -33,6 +33,7 @@ public class LoginHandler extends AbstracrtHandler {
             headers.put("Location", "/index.html");
             headers.put("Set-Cookie", "logedin=true");
         } else {
+            log.warn("[Login Fail] user not found. userId = {}", param.get("userId"));
             headers.put("Location", "/user/login_failed.html");
         }
 
