@@ -56,7 +56,7 @@ public class HttpResponse {
                 dos.writeBytes("\r\n");
             }
             dos.flush();
-            log.debug("[Send Request] statusCode = {}, headers = {}", statusCode, headers);
+            log.debug("[Send Response] statusCode = {}, headers = {}", statusCode, headers);
         } catch (IOException e) {
             log.error(e.getMessage());
         }

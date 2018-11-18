@@ -23,11 +23,6 @@ public class LoginHandler extends AbstracrtHandler {
 
     @Override
     public void doPost(HttpRequest httpRequest, HttpResponse httpResponse) {
-        throw new InvalidUrlException();
-    }
-
-    @Override
-    public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         Map<String, String> param = HttpRequestUtils.parseQueryString(httpRequest.getBody());
         log.debug("login request {}", param); //password는 필터링 해야할텐데
 
@@ -36,7 +31,7 @@ public class LoginHandler extends AbstracrtHandler {
         Map<String, String> headers = new HashMap<>();
         if(user != null) {
             headers.put("Location", "/index.html");
-            headers.put("Set-Cookie", "logined=true");
+            headers.put("Set-Cookie", "logedin=true");
         } else {
             headers.put("Location", "/user/login_failed.html");
         }
@@ -44,5 +39,10 @@ public class LoginHandler extends AbstracrtHandler {
         httpResponse.setStatusCode(HttpStatusCode.REDIRECT);
         httpResponse.setHeaders(headers);
         httpResponse.sendResponse();
+    }
+
+    @Override
+    public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
+        throw new InvalidUrlException();
     }
 }

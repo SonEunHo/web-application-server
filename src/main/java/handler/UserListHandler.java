@@ -35,8 +35,7 @@ public class UserListHandler extends AbstracrtHandler {
     @Override
     public void doGet(HttpRequest httpRequest, HttpResponse httpResponse) {
         boolean hasLoginCookie = false;
-        Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie"));
-        if(cookies.get("logined") != null && cookies.get("logined").equals("true")) {
+        Map<String, String> cookies = HttpRequestUtils.parseCookies(httpRequest.getHeaders().get("Cookie")if(cookies.get("logedin") != null && cookies.get("logedin").equals("true")) {
             hasLoginCookie = true;
         }
 
@@ -49,6 +48,7 @@ public class UserListHandler extends AbstracrtHandler {
             httpResponse.setStatusCode(HttpStatusCode.OK);
             httpResponse.setBody(makeUserListHtml(userList));
         } else {
+            log.debug("[UnAthorized] no cookie");
             headers.put("Location", "/user/login.html");
             httpResponse.setHeaders(headers);
             httpResponse.setStatusCode(HttpStatusCode.REDIRECT);
